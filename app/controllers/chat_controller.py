@@ -55,9 +55,9 @@ async def chat_with_agent(request: ChatRequest) -> ChatResponse:
     
     if request.stream:
         # TODO: Implementar streaming adequado
-        response = agent.run(request.message)
+        response = await agent.arun(request.message)
     else:
-        response = agent.run(request.message)
+        response = await agent.arun(request.message)
     
     return ChatResponse(
         response=response.content if hasattr(response, 'content') else str(response),
@@ -65,7 +65,7 @@ async def chat_with_agent(request: ChatRequest) -> ChatResponse:
     )
 
 
-def chat_stream_generator(request: ChatRequest):
+async def chat_stream_generator(request: ChatRequest):
     """
     Gera chunks de resposta para streaming
     
@@ -77,7 +77,7 @@ def chat_stream_generator(request: ChatRequest):
     """
     agent = get_agent(request.model)
     
-    for chunk in agent.run(request.message, stream=True):
+    async for chunk in agent.arun(request.message, stream=True):
         if hasattr(chunk, 'content'):
             yield chunk.content
         else:
