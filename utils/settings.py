@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     json_chunk_size: int = 500
     json_overlap: int = 50
 
+    sample_db_url: str = "sqlite+aiosqlite:///wren_sample.db"
+
+    wren_url: str = "http://localhost:8081"
+
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", case_sensitive=False
     )
