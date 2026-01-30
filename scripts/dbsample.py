@@ -15,32 +15,36 @@ class SampleDB:
     async def create_sample_db(self):
         """Cria schema + 10k linhas de dados BI realistas"""
         async with self.engine.connect() as conn:
+            await conn.execute(text("DROP TABLE IF EXISTS sales;"))
+            await conn.execute(text("DROP TABLE IF EXISTS products;"))
+            await conn.execute(text("DROP TABLE IF EXISTS regions;"))
+            
             await conn.execute(text("""
-                DROP TABLE IF EXISTS sales CASCADE;
-                DROP TABLE IF EXISTS products CASCADE;
-                DROP TABLE IF EXISTS regions CASCADE;
-                
                 CREATE TABLE regions (
-                    id SERIAL PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name VARCHAR(50),
                     manager VARCHAR(100)
                 );
-                
+            """))
+            
+            await conn.execute(text("""
                 CREATE TABLE products (
-                    id SERIAL PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name VARCHAR(100),
                     category VARCHAR(50),
                     price DECIMAL(10,2)
                 );
-                
+            """))
+            
+            await conn.execute(text("""
                 CREATE TABLE sales (
-                    id SERIAL PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     region_id INTEGER REFERENCES regions(id),
                     product_id INTEGER REFERENCES products(id),
                     sale_date DATE,
                     quantity INTEGER,
                     total DECIMAL(12,2),
-                    created_at TIMESTAMP DEFAULT NOW()
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
             """))
             
@@ -51,7 +55,9 @@ class SampleDB:
                 ('Sul', 'Ana Costa'),
                 ('Norte', 'Pedro Lima'),
                 ('Centro-Oeste', 'Carla Souza');
-                
+            """))
+            
+            await conn.execute(text("""
                 INSERT INTO products (name, category, price) VALUES
                 ('Notebook Pro', 'Eletrônicos', 4500.00),
                 ('Smartphone X', 'Eletrônicos', 2500.00),
@@ -72,13 +78,15 @@ class SampleDB:
                 qty = random.randint(1, 10)
                 date_offset = timedelta(days=random.randint(0, 730))
                 
-                sales_data.append((
-                    region_id, product_id, 
-                    (base_date + date_offset).date(),
-                    qty, qty * random.uniform(0.9, 1.1) * 100
-                ))
+                sales_data.append({
+                    "region_id": region_id,
+                    "product_id": product_id,
+                    "sale_date": (base_date + date_offset).date(),
+                    "quantity": qty,
+                    "total": qty * random.uniform(0.9, 1.1) * 100
+                })
             
-            await conn.executemany(text("""
+            await conn.execute(text("""
                 INSERT INTO sales (region_id, product_id, sale_date, quantity, total)
                 VALUES (:region_id, :product_id, :sale_date, :quantity, :total)
             """), sales_data)
