@@ -8,19 +8,15 @@ from routers import chat_router, knowledge_router
 from utils.llm import LLMConfig
 from utils.vector_db import vector_db
 
-# Configuração da aplicação
 app = FastAPI(
     title="Agno RAG API",
     description="API para chat com RAG usando Agno, Groq e Qdrant",
     version="1.0.0"
 )
 
-# Registra os routers
 app.include_router(chat_router.router)
 app.include_router(knowledge_router.router)
 
-
-# ============= Rotas Auxiliares =============
 
 @app.get("/models")
 async def list_models():
@@ -43,9 +39,6 @@ async def health_check():
         "version": "1.0.0",
         "knowledge_base": "ready"
     }
-
-
-# ============= Inicialização =============
 
 @app.on_event("startup")
 async def startup_event():
