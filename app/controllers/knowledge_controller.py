@@ -11,7 +11,7 @@ from agno.knowledge.reader.pdf_reader import PDFReader
 from agno.knowledge.reader.website_reader import WebsiteReader
 from fastapi import UploadFile
 
-from schamas.document_schemas import (
+from app.schamas.document_schemas import (
     AddContentResponse,
     AddURLRequest,
     DocumentItem,

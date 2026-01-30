@@ -5,8 +5,8 @@ Rotas para operações de chat
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from controllers.chat_controller import chat_stream_generator, chat_with_agent
-from schamas.chat_schemas import ChatRequest, ChatResponse
+from app.controllers.chat_controller import chat_stream_generator, chat_with_agent
+from app.schamas.chat_schemas import ChatRequest, ChatResponse
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 

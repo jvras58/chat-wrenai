@@ -4,7 +4,7 @@ Rotas para operações de knowledge base
 
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 
-from controllers.knowledge_controller import (
+from app.controllers.knowledge_controller import (
     add_json_to_knowledge,
     add_pdf_to_knowledge,
     add_url_to_knowledge,
@@ -12,8 +12,8 @@ from controllers.knowledge_controller import (
     list_documents,
     search_documents,
 )
-from controllers.knowledge_controller import get_knowledge_status as get_status
-from schamas.document_schemas import (
+from app.controllers.knowledge_controller import get_knowledge_status as get_status
+from app.schamas.document_schemas import (
     AddContentResponse,
     AddURLRequest,
     KnowledgeStatusResponse,

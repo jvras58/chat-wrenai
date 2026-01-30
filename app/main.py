@@ -4,7 +4,7 @@ API REST para RAG com Agno, Groq e Qdrant
 
 from fastapi import FastAPI
 
-from routers import chat_router, knowledge_router
+from app.routers import chat_router, knowledge_router
 from utils.llm import LLMConfig
 from utils.vector_db import vector_db
 

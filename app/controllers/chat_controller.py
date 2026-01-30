@@ -4,17 +4,18 @@ Controllers para operações de chat
 
 from agno.agent import Agent
 
-from schamas.chat_schemas import ChatRequest, ChatResponse
+from app.schamas.chat_schemas import ChatRequest, ChatResponse
 from utils.knowledge import knowledge
 from utils.llm import LLMConfig
 from utils.settings import settings
+from tools.WrenAi_tools import bi_query_tool
 
 # Agent global
 _agent = None
 
 
 def get_agent(model_name: str = "llama-3.3-70b") -> Agent:
-    """Retorna ou cria agent com modelo especificado"""
+    """Agent que usa Wren Engine + seu RAG atual"""
     global _agent
     
     llm = LLMConfig.get_model(model_name)
@@ -22,14 +23,15 @@ def get_agent(model_name: str = "llama-3.3-70b") -> Agent:
     _agent = Agent(
         model=llm,
         knowledge=knowledge,
-        description="Você é um assistente que SEMPRE consulta a base de conhecimento sobre a plataforma Redu antes de responder.",
-        instructions=[
-            "OBRIGATÓRIO: Use a função search_knowledge_base para buscar informações antes de qualquer resposta",
-            "NUNCA responda sem antes buscar na base de conhecimento",
-            "Baseie suas respostas APENAS nas informações encontradas na busca",
-            "Se a busca não retornar resultados relevantes, informe que não encontrou informações sobre o assunto",
-            "Cite as fontes encontradas na sua resposta",
-        ],
+        description="Assistente BI que usa Wren para SQL + RAG para docs",
+        instructions="""
+        Para perguntas BI (vendas, relatórios, métricas):
+        1. Use tool 'bi_query' com Wren Engine
+        2. Peça ao LLM para formatar resultado como tabela/markdown
+        
+        Para docs/processos: use knowledge base (RAG atual)
+        """,
+        tools=[bi_query_tool],
         markdown=True,
         search_knowledge=True,
         read_chat_history=True,  # Mantém contexto da conversa
