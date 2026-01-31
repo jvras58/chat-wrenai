@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
     sample_db_url: str = "sqlite+aiosqlite:///wren_sample.db"
 
-    wren_url: str = "http://localhost:8081"
+    wren_url: str = "http://localhost:8000"
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", case_sensitive=False

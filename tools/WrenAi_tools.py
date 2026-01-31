@@ -1,5 +1,6 @@
 from agno.tools import tool
 from app.controllers.wrenai_controller import bi_query
+from app.schamas.bi_schemas import BIRequest
 
 @tool
 async def bi_query_tool(intent: str, db_source: str = "default") -> str:
