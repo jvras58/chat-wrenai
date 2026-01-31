@@ -5,15 +5,14 @@ Controlador Wren AI para Consultas BI
 - Tratamento robusto de erros
 """
 
-import asyncio
-import logging
-from typing import Optional, Dict, Any
-from httpx import AsyncClient, HTTPError, TimeoutException
-from functools import lru_cache
 import hashlib
+import logging
+from typing import Any, Dict, Optional
+
+from app.schemas.bi_schemas import BIRequest, BIResponse
+from httpx import AsyncClient, HTTPError, TimeoutException
 
 from utils.settings import settings
-from app.schemas.bi_schemas import BIRequest, BIResponse
 
 logger = logging.getLogger(__name__)
 
@@ -112,8 +111,8 @@ class WrenAIClient:
             
             response.raise_for_status()
             data = response.json()
-            
-            logger.info(f"✓ SQL gerado com sucesso")
+
+            logger.info("✓ SQL gerado com sucesso")
             return data.get("sql")
             
         except TimeoutException:
@@ -149,8 +148,8 @@ class WrenAIClient:
                 "sql": sql,
                 "db_source": db_source
             }
-            
-            logger.info(f"📊 Executando SQL...")
+
+            logger.info("📊 Executando SQL...")
             response = await self.client.post(
                 "/mcp/query",
                 json=payload
