@@ -27,7 +27,11 @@ class Settings(BaseSettings):
     json_chunk_size: int = 500
     json_overlap: int = 50
 
-    sample_db_url: str = "sqlite+aiosqlite:///wren_sample.db"
+    # Database URL
+    postgres_user: str = "postgres"
+    postgres_password: str = "postgres123"
+    postgres_db: str = "sales_db"
+    db_url: str = f"postgresql+asyncpg://{postgres_user}:{postgres_password}@localhost:5432/{postgres_db}"
 
     wren_url: str = "http://localhost:8000"
 

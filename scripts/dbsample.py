@@ -9,7 +9,7 @@ from utils.settings import settings
 
 class SampleDB:
     def __init__(self):
-        self.engine = create_async_engine(settings.sample_db_url, echo=True)
+        self.engine = create_async_engine(settings.db_url, echo=True)
         self.SessionLocal = async_sessionmaker(bind=self.engine)
     
     async def create_sample_db(self):
@@ -21,7 +21,7 @@ class SampleDB:
             
             await conn.execute(text("""
                 CREATE TABLE regions (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id SERIAL PRIMARY KEY,
                     name VARCHAR(50),
                     manager VARCHAR(100)
                 );
@@ -29,7 +29,7 @@ class SampleDB:
             
             await conn.execute(text("""
                 CREATE TABLE products (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id SERIAL PRIMARY KEY,
                     name VARCHAR(100),
                     category VARCHAR(50),
                     price DECIMAL(10,2)
@@ -38,7 +38,7 @@ class SampleDB:
             
             await conn.execute(text("""
                 CREATE TABLE sales (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id SERIAL PRIMARY KEY,
                     region_id INTEGER REFERENCES regions(id),
                     product_id INTEGER REFERENCES products(id),
                     sale_date DATE,

@@ -1,39 +1,152 @@
 services:
+  # ============================================
+  # BANCO DE DADOS - PostgreSQL para dados reais
+  # ============================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - wren_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # VECTOR DATABASE - Qdrant para RAG/embeddings
+  # ============================================
   qdrant:
     image: qdrant/qdrant:latest
-    container_name: agno-rag-qdrant
+    container_name: qdrant_db
     ports:
       - "6333:6333"
       - "6334:6334"
     volumes:
-      - qdrant_storage:/qdrant/storage
+      - qdrant_data:/qdrant/storage
+      - qdrant_snapshots:/qdrant/snapshots
     environment:
       - QDRANT__SERVICE__HTTP_PORT=6333
       - QDRANT__SERVICE__GRPC_PORT=6334
-    restart: unless-stopped
+    networks:
+      - wren_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # ============================================
+  # WREN ENGINE - Core SQL generation engine
+  # ============================================
   wren-engine:
-      image: ghcr.io/canner/wren-engine:latest
-      ports:
-        - "8081:8080"
-      environment:
-        - SAMPLE_DB_URL=sqlite+aiosqlite:///wren_sample.db
-      volumes:
-        - ./etc:/usr/src/app/etc
-      restart: unless-stopped
+    image: ghcr.io/canner/wren-engine:latest
+    container_name: wren_engine
+    ports:
+      - "8080:8080"
+    environment:
+      # Database connection
+      WREN_ENGINE_SQL_URL: "postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
+      
+      # LLM Configuration (Groq)
+      WREN_ENGINE_LLM_PROVIDER: "groq"
+      WREN_ENGINE_LLM_MODEL: "${DEFAULT_MODEL}"
+      WREN_ENGINE_LLM_API_KEY: "${GROQ_API_KEY}"
+      
+      # Engine settings
+      WREN_ENGINE_PORT: "8080"
+      WREN_ENGINE_TIMEOUT: "60"
+      WREN_ENGINE_MAX_WORKERS: "4"
+      
+      # Logging
+      WREN_ENGINE_LOG_LEVEL: "INFO"
+    volumes:
+      - ./etc:/usr/src/app/etc
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - wren_network
 
-  ibis-server:
-      image: ghcr.io/canner/wren-engine-ibis:latest
-      ports:
-        - "8000:8000"
-      environment:
-        - WREN_ENGINE_ENDPOINT=http://wren-engine:8080
-      volumes:
-        - ./etc:/usr/src/app/etc
-      restart: unless-stopped
+  # ============================================
+  # WREN IBIS - SQL API layer for Wren
+  # ============================================
+  wren-ibis:
+    image: ghcr.io/canner/wren-engine-ibis:latest
+    container_name: wren_ibis
+    ports:
+      - "8000:8000"
+    environment:
+      # Wren Engine connection
+      WREN_ENGINE_URL: "http://wren-engine:8080"
+      
+      # Database
+      WREN_IBIS_DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
+      
+      # API configuration
+      WREN_IBIS_HOST: "0.0.0.0"
+      WREN_IBIS_PORT: "8000"
+      WREN_IBIS_LOG_LEVEL: "INFO"
+      
+      # LLM
+      WREN_IBIS_LLM_PROVIDER: "groq"
+      WREN_IBIS_LLM_API_KEY: "${GROQ_API_KEY}"
+
+    volumes:
+      - ${LOCAL_STORAGE:-.}:/usr/src/app/data
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      wren-engine:
+        condition: service_started
+    networks:
+      - wren_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # WREN UI - Dashboard (optional)
+  # ============================================
+  wren-ui:
+    image: ghcr.io/canner/wren-ui:latest
+    container_name: wren_ui
+    ports:
+      - "3000:3000"
+    environment:
+      # APIs
+      NEXT_PUBLIC_API_URL: "http://localhost:8000"
+      NEXT_PUBLIC_WREN_IBIS_ENDPOINT: "http://localhost:8000"
+    depends_on:
+      - wren-ibis
+    networks:
+      - wren_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
 
+networks:
+  wren_network:
+    driver: bridge
 
 volumes:
-  qdrant_storage:
+  postgres_data:
+    driver: local
+  qdrant_data:
+    driver: local
+  qdrant_snapshots:
     driver: local
